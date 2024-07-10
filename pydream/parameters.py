@@ -16,21 +16,24 @@ class SampledParam():
         keyword arguments for the SciPy distribution
 
         """
-    def __init__(self, scipy_distribution, *args, **kwargs):
+    def __init__(self, scipy_distribution, seed, *args, **kwargs):
         self.dist = scipy_distribution(*args, **kwargs)
-        self.dsize = self.random().size
+        self.dsize = self.random(seed=seed).size
+        self.seed = seed
 
     def interval(self, alpha=1):
         """Return the interval for a given alpha value."""
 
         return self.dist.interval(alpha)
 
-    def random(self, reseed=False):
+    def random(self, reseed=False, seed=None):
         """Return a random value drawn from this prior."""
         if reseed:
-            random_seed = np.random.RandomState()
+            #random_seed = np.random.RandomState()
+            #TODO why does pydream needs to be reseeded?
+            random_seed = seed
         else:
-            random_seed = None
+            random_seed = seed
 
         return self.dist.rvs(random_state=random_seed)
 

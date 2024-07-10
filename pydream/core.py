@@ -7,7 +7,6 @@ from .Dream import Dream, DreamPool
 from .model import Model
 import traceback
 
-
 def run_dream(parameters, likelihood, nchains=5, niterations=50000, start=None, restart=False, verbose=True, nverbose=10, tempering=False, mp_context=None, **kwargs):
     """Run DREAM given a set of parameters with priors and a likelihood function.
 
@@ -42,7 +41,6 @@ def run_dream(parameters, likelihood, nchains=5, niterations=50000, start=None, 
     log_ps : list of arrays
         Log probability for each sampled point for each chain
         """
-
     if restart:
         if start == None:
             raise Exception('Restart run specified but no start positions given.')
@@ -80,10 +78,11 @@ def run_dream(parameters, likelihood, nchains=5, niterations=50000, start=None, 
             returned_vals = pool.map(_sample_dream, args)
             sampled_params = [val[0] for val in returned_vals]
             log_ps = [val[1] for val in returned_vals]
+            acceptance_rate = [val[2] for val in returned_vals]
     finally:
         pool.close()
         pool.join()
-    return sampled_params, log_ps
+    return sampled_params, log_ps, acceptance_rate
 
 
 def _sample_dream(args):
@@ -120,13 +119,13 @@ def _sample_dream(args):
             if np.any(q0 != old_params):
                 naccepts += 1
                 naccepts100win += 1
-            
+
     except Exception as e:
         traceback.print_exc()
         print()
         raise e
 
-    return sampled_params, log_ps
+    return sampled_params, log_ps, acceptance_rate
 
 def _sample_dream_pt(nchains, niterations, step_instance, start, pool, verbose):
     

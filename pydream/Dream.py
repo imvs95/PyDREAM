@@ -66,6 +66,8 @@ class Dream():
                  crossover_file=False, gamma_file=False, multitry=False, parallel=False, verbose=False,
                  model_name=False, hardboundaries=True, mp_context=None, **kwargs):
 
+        self.seed = kwargs["seed"] if "seed" in kwargs else None
+
         # Set Dream multiprocessing context
         self.mp_context = mp_context
         # Set model and variable attributes (if no variables passed, set to all parameters)
@@ -658,6 +660,7 @@ class Dream():
             whether to use a snooker update at this iteration. Default = False
         """
 
+        random.seed(self.seed)
         if not snooker:
             chain_num = random.sample(range(int(Dream_shared_vars.count.value+nseedchains)), DEpairs*2)
         else:
@@ -685,6 +688,7 @@ class Dream():
         snooker : bool
             Whether to use a snooker update on this iteration."""
 
+        np.random.seed(self.seed)
         if not snooker:
             
             sampled_history_pts = np.array([self.sample_from_history(self.nseedchains, DEpairs, self.total_var_dimension) for i in range(n_proposed_pts)])
@@ -759,11 +763,17 @@ class Dream():
                 x_upper = masked_point > self.maxs
 
                 if x_lower.any():
-                    masked_point[x_lower] = 2 * self.mins[x_lower] - masked_point[x_lower]
+                    try:
+                        masked_point[x_lower] = 2 * self.mins[x_lower] - masked_point[x_lower]
+                    except IndexError:
+                        masked_point = self.mins[0]
 
                 if x_upper.any():
 
-                    masked_point[x_upper] = 2 * self.maxs[x_upper] - masked_point[x_upper]
+                    try:
+                        masked_point[x_upper] = 2 * self.maxs[x_upper] - masked_point[x_upper]
+                    except IndexError:
+                        masked_point = self.maxs[0]
                
                 #Occasionally reflection will result in points still outside of boundaries
                 x_lower = masked_point < self.mins
@@ -938,7 +948,7 @@ class Dream():
         Dream_shared_vars.count.value += 1
         if self.save_history and len_history == (nhistoryrecs+1)*ndimensions:
             if not self.model_name:
-                prefix = datetime.now().strftime('%Y_%m_%d_%H:%M:%S')+'_'
+                prefix = datetime.now().strftime('%Y_%m_%d_%H_%M_%S')+'_'
             else:
                 prefix = self.model_name+'_'
 
